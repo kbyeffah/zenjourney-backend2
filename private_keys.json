@@ -1,0 +1,14 @@
+{
+    "budget_planner": {
+        "identity_key": "a2937e2475b25c3534b38ef27c63a24a4d28566cb2dfdc99db9c219ad4cf3575",
+        "wallet_key": "Ih6m7T2k0HzIoiubuVgHuLh8/jMM8qJMJijeoDIpO20="
+    },
+    "Travel Request Agent": {
+        "identity_key": "65a7e0b45aa0741a68d51a477f4a5171eef0710124f77bd7ea7a6516d70caa6d",
+        "wallet_key": "QQtaLv1gJJU8gfmWHBDkLjLgLO8MAYjBIaBl/TWrmrE="
+    },
+    "Travel Planning Agent": {
+        "identity_key": "d9ad0d8badcb8429187cb8cf79641e9e296ae6e9625f17af928f62675c403501",
+        "wallet_key": "ZWeC3kAYsAZL1+LSDrVQfyr3nFFYDn4JFVgTbwAslrA="
+    }
+}
