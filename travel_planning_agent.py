@@ -32,13 +32,13 @@ planning_agent = Agent(
 
 # FastAPI endpoint for travel planning
 @app.post("/travel/plan")
-async def handle_travel_plan(request: dict):
+async def handle_travel_plan(request: pydantic_models["TravelRequest"]):
     try:
-        destination = request.get("destination", "")
-        start_date = request.get("start_date", "")
-        end_date = request.get("end_date", "")
-        budget = float(request.get("budget", 0))
-        preferences = request.get("preferences", "")
+        destination = request.destination
+        start_date = request.start_date
+        end_date = request.end_date
+        budget = request.budget
+        preferences = request.preferences
 
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
@@ -91,11 +91,11 @@ def create_daily_plan(day_number):
 async def startup_handler(ctx: Context):
     ctx.logger.info(f'Travel Planning Agent started with address: {ctx.agent.address}')
 
-@planning_agent.on_message(model=pydantic_models.TravelRequest)
-async def handle_travel_request(ctx: Context, sender: str, msg: pydantic_models.TravelRequest):
+@planning_agent.on_message(model=pydantic_models["TravelRequest"])
+async def handle_travel_request(ctx: Context, sender: str, msg: pydantic_models["TravelRequest"]):
     ctx.logger.info(f"Received travel request: {msg.destination}")
     plan = create_travel_plan(msg)
-    travel_plan = pydantic_models.TravelPlan(
+    travel_plan = pydantic_models["TravelPlan"](
         destination=plan["destination"],
         itinerary=plan["itinerary"],
         estimated_cost=plan["estimated_cost"],
@@ -104,7 +104,7 @@ async def handle_travel_request(ctx: Context, sender: str, msg: pydantic_models.
     )
     await ctx.send(sender, travel_plan)
 
-def create_travel_plan(request: pydantic_models.TravelRequest) -> dict:
+def create_travel_plan(request: pydantic_models["TravelRequest"]) -> dict:
     start_date = datetime.strptime(request.start_date, "%Y-%m-%d")
     end_date = datetime.strptime(request.end_date, "%Y-%m-%d")
     total_days = (end_date - start_date).days + 1
