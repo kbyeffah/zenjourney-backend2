@@ -14,7 +14,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3001",  # Local frontend
+        "http://localhost:3000",  # Local frontend
         "https://*.vercel.app",  # Vercel frontend
     ],
     allow_credentials=True,
@@ -29,6 +29,11 @@ planning_agent = Agent(
     endpoint={"http://localhost:8001/submit": {"weight": 1}},
     network=None
 )
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {"message": "ZenJourney Travel Planning API"}
 
 # FastAPI endpoint for travel planning
 @app.post("/travel/plan")
