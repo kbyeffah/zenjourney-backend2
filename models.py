@@ -1,13 +1,14 @@
-from uagents import Model
+from pydantic import BaseModel
+from typing import Dict, List
 
-class TravelRequest(Model):
+class TravelRequest(BaseModel):
     destination: str
     start_date: str
     end_date: str
     budget: float
     preferences: str
 
-class DailyPlan(Model):
+class DailyPlan(BaseModel):
     weather: str
     breakfast: str
     must_visit: str
@@ -16,9 +17,15 @@ class DailyPlan(Model):
     hotel_suggestion: str
     travel_distance: str
 
-class TravelPlan(Model):
+class TravelPlan(BaseModel):
     destination: str
-    itinerary: dict
+    itinerary: Dict[str, DailyPlan]
     estimated_cost: float
-    hotel_suggestions: list
+    hotel_suggestions: List[str]
     total_days: int
+
+pydantic_models = {
+    "TravelRequest": TravelRequest,
+    "TravelPlan": TravelPlan,
+    "DailyPlan": DailyPlan
+}

@@ -15,7 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3001",  # Local frontend
-        "https://*.vercel.app",  # Vercel frontend (to be updated)
+        "https://*.vercel.app",  # Vercel frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
