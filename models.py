@@ -1,12 +1,19 @@
-from pydantic import BaseModel
-from typing import Dict, List
+from pydantic import BaseModel, field_validator
+from typing import Dict, List, Union
 
 class TravelRequest(BaseModel):
     destination: str
     start_date: str
     end_date: str
     budget: float
-    preferences: str
+    preferences: Union[str, List[str]]
+    
+    @field_validator('preferences')
+    @classmethod
+    def validate_preferences(cls, v):
+        if isinstance(v, list):
+            return ", ".join(v)  # Convert list to comma-separated string
+        return v  # Return string as-is
 
 class DailyPlan(BaseModel):
     weather: str

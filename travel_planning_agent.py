@@ -1,34 +1,17 @@
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
 import random
-from models import pydantic_models
-import os
-from uvicorn import Config, Server
-from firebase_admin import auth, initialize_app, credentials
-import logging
+from pydantic import BaseModel
+import pandas as pd
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Initialize Firebase Admin SDK (ensure you have a service account JSON file)
-try:
-    cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_PATH", "path/to/serviceAccountKey.json"))
-    initialize_app(cred)
-    logger.info("Firebase Admin SDK initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
-
-# Initialize FastAPI app
 app = FastAPI()
 
-# Configure CORS to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://zenjourney.vercel.app",  # Replace with your actual Vercel URL
+        "http://localhost:3001",
+        "http://zenjourney-frontend.vercel.app",
         "https://*.vercel.app",
     ],
     allow_credentials=True,
@@ -36,104 +19,133 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root endpoint
-@app.get("/")
-async def root():
-    return {"message": "ZenJourney Travel Planning API"}
+# Pydantic models to match TravelPlanDisplay.tsx
+class MustVisit(BaseModel):
+    attraction: str
+    crowd_info: str
+    recommended_time: str
 
-# FastAPI endpoint for travel planning
-@app.post("/travel/plan")
-async def handle_travel_plan(request: pydantic_models["TravelRequest"], authorization: str = Header(None)):
-    try:
-        # Validate Firebase token if provided
-        if authorization:
-            try:
-                token = authorization.replace("Bearer ", "")
-                auth.verify_id_token(token)
-                logger.info("Firebase token verified successfully")
-            except Exception as e:
-                logger.error(f"Firebase token verification failed: {e}")
-                raise HTTPException(status_code=401, detail="Invalid or expired token")
+class LocalEvent(BaseModel):
+    name: str
+    type: str
+    duration: str
 
-        destination = request.destination
-        start_date = request.start_date
-        end_date = request.end_date
-        budget = request.budget
-        preferences = request.preferences
+class TravelTips(BaseModel):
+    morning_activity: str
+    transport: str
+    local_customs: str
 
-        try:
-            start = datetime.strptime(start_date, "%Y-%m-%d")
-            end = datetime.strptime(end_date, "%Y-%m-%d")
-        except ValueError as e:
-            logger.error(f"Date parsing error: {e}")
-            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+class DailyPlan(BaseModel):
+    weather: str
+    breakfast: str
+    must_visit: MustVisit
+    local_event: LocalEvent
+    dinner: str
+    travel_tips: TravelTips
 
-        if start > end:
-            raise HTTPException(status_code=400, detail="End date must be after start date")
+class EmergencyNumbers(BaseModel):
+    police: str
+    ambulance: str
+    tourist_helpline: str
 
-        total_days = (end - start).days + 1
-        if total_days <= 0:
-            raise HTTPException(status_code=400, detail="Trip duration must be at least 1 day")
+class GeneralTravelTips(BaseModel):
+    best_time_to_visit: str
+    local_transportation: str
+    currency: str
+    language: str
+    emergency_numbers: EmergencyNumbers
 
-        daily_plans = {}
-        for day in range(1, total_days + 1):
-            daily_plans[f"Day {day}"] = create_daily_plan(day)
+class HotelSuggestion(BaseModel):
+    name: str
+    rating: float
+    price_per_night: float
+    amenities: list[str]
+    location: str
 
-        response = {
-            "destination": destination,
-            "itinerary": daily_plans,
-            "estimated_cost": budget * 0.9,
-            "hotel_suggestions": [get_random_hotel() for _ in range(3)],
-            "total_days": total_days
-        }
-        logger.info(f"Generated travel plan for {destination} with {total_days} days")
-        return response
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        logger.error(f"Error generating travel plan: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+class TravelPlan(BaseModel):
+    destination: str
+    itinerary: dict[str, DailyPlan]
+    estimated_cost: float
+    hotel_suggestions: list[HotelSuggestion]
+    travel_tips: GeneralTravelTips
 
-# Utility functions
-def get_random_weather():
-    return f"{random.randint(15, 30)}°C, {random.choice(['Sunny', 'Cloudy', 'Rainy'])}"
-
-def get_random_hotel():
-    return random.choice(["Grand Hotel", "City View Inn", "Riverside Hotel"])
-
-def get_random_restaurant():
-    return random.choice(["Local Bistro", "Gourmet Restaurant", "Café Central"])
-
-def get_random_attraction():
-    return random.choice(["Art Museum", "Botanical Garden", "City Center"])
-
-def get_random_event():
-    return random.choice(["Music Festival", "Cultural Show", "Historical Tour"])
-
-def create_daily_plan(day_number):
-    return {
-        "weather": get_random_weather(),
-        "breakfast": f"{get_random_restaurant()} - Local Breakfast",
-        "must_visit": {
-            "attraction": get_random_attraction(),
-            "crowd_info": "Less crowded",
-            "recommended_time": f"{random.randint(9, 12)} AM - {random.randint(1, 5)} PM"
-        },
-        "local_event": get_random_event(),
-        "dinner": f"{get_random_restaurant()} - Local Specialties",
-        "hotel_suggestion": get_random_hotel(),
-        "travel_distance": f"{random.randint(5, 20)} km"
-    }
-
-# Run FastAPI server
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8001))
-    config = Config(
-        app=app,
-        host="0.0.0.0",
-        port=port,
-        log_level="info"
+# Mock data generation
+def create_must_visit() -> MustVisit:
+    attractions = ["Eiffel Tower", "Louvre Museum", "Central Park", "Tokyo Tower"]
+    return MustVisit(
+        attraction=random.choice(attractions),
+        crowd_info="Moderate crowds expected",
+        recommended_time="9:00 AM - 12:00 PM"
     )
-    server = Server(config)
-    logger.info(f"Starting FastAPI server on port {port}")
-    server.run()
+
+def create_local_event() -> LocalEvent:
+    events = ["Summer Festival", "Art Exhibition", "Local Market Day"]
+    return LocalEvent(
+        name=random.choice(events),
+        type="Cultural",
+        duration="2-3 hours"
+    )
+
+def create_travel_tips() -> TravelTips:
+    return TravelTips(
+        morning_activity="Visit local markets",
+        transport="Public metro or taxi",
+        local_customs="Greet with a bow in Japan"
+    )
+
+def create_daily_plan() -> DailyPlan:
+    return DailyPlan(
+        weather="Sunny, 25°C",
+        breakfast="Croissants and coffee",
+        must_visit=create_must_visit(),
+        local_event=create_local_event(),
+        dinner="Local seafood restaurant",
+        travel_tips=create_travel_tips()
+    )
+
+def create_hotel_suggestion() -> HotelSuggestion:
+    hotels = ["Grand Hotel", "Seaside Inn", "City Center Suites"]
+    return HotelSuggestion(
+        name=random.choice(hotels),
+        rating=round(random.uniform(3.5, 5.0), 1),
+        price_per_night=round(random.uniform(100, 300), 2),
+        amenities=["Wi-Fi", "Pool", "Breakfast Included"],
+        location="Downtown"
+    )
+
+def create_general_travel_tips() -> GeneralTravelTips:
+    return GeneralTravelTips(
+        best_time_to_visit="Spring (March-May)",
+        local_transportation="Metro and taxis",
+        currency="USD",
+        language="English",
+        emergency_numbers=EmergencyNumbers(
+            police="911",
+            ambulance="911",
+            tourist_helpline="1-800-555-1234"
+        )
+    )
+
+def create_travel_plan(destination: str, total_days: int) -> TravelPlan:
+    itinerary = {f"Day {i+1}": create_daily_plan() for i in range(total_days)}
+    return TravelPlan(
+        destination=destination,
+        itinerary=itinerary,
+        estimated_cost=random.uniform(1000, 5000),
+        hotel_suggestions=[create_hotel_suggestion() for _ in range(3)],
+        travel_tips=create_general_travel_tips()
+    )
+
+# API endpoint
+class TravelPlanRequest(BaseModel):
+    destination: str
+    start_date: str
+    end_date: str
+    budget: float
+    preferences: str
+
+@app.post("/travel/plan")
+async def generate_travel_plan(request: TravelPlanRequest):
+    total_days = (pd.to_datetime(request.end_date) - pd.to_datetime(request.start_date)).days + 1
+    plan = create_travel_plan(request.destination, total_days)
+    return plan
