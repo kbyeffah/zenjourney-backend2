@@ -6,17 +6,19 @@ import pandas as pd
 
 app = FastAPI()
 
+# Updated CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
-        "http://zenjourney-frontend.vercel.app",
-        "https://*.vercel.app",
+        "https://zenjourney-frontend.vercel.app",  # Add this exact origin
+        "http://zenjourney-frontend.vercel.app",   # Include both http and https
+        "https://*.vercel.app",                    # Wildcard for Vercel subdomains
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Allow all headers (e.g., Authorization, Content-Type)
 )
 
 # Pydantic models to match TravelPlanDisplay.tsx
