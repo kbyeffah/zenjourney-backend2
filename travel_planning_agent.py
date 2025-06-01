@@ -15,6 +15,7 @@ app.add_middleware(
         "https://zenjourney-frontend.vercel.app",  # Add this exact origin
         "http://zenjourney-frontend.vercel.app",   # Include both http and https
         "https://*.vercel.app",                    # Wildcard for Vercel subdomains
+        "https://tripsage-nu.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, OPTIONS, etc.)
